@@ -1,0 +1,15 @@
+.gradle
+build
+.env
+.env.*
+!.env.template
+.idea
+.vscode
+out
+bin
+*.iml
+*.iws
+*.ipr
+.git
+.gitignore
+HELP.md

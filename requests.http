@@ -1,0 +1,26 @@
+@baseUrl = http://localhost:8090
+@dockerUrl = http://localhost:8080
+
+### Health
+GET {{baseUrl}}/health
+
+### Docker health
+GET {{dockerUrl}}/health
+
+### Create user
+POST {{baseUrl}}/api/v1/users
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "nickname": "live-user"
+}
+
+### Validation error
+POST {{baseUrl}}/api/v1/users
+Content-Type: application/json
+
+{
+  "email": "not-email",
+  "nickname": ""
+}
