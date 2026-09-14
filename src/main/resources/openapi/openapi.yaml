@@ -68,6 +68,7 @@ paths:
         - Vote
       operationId: createVote
       summary: Create a vote
+      description: Register a vote for one existing user. Set `voterId` to the user `id` returned by `POST /api/v1/users`; each user id can vote only once.
       requestBody:
         required: true
         content:
@@ -88,7 +89,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiEnvelope'
         '409':
-          description: Duplicate voter
+          description: The user id in `voterId` has already voted
           content:
             application/json:
               schema:
@@ -212,7 +213,8 @@ components:
           minLength: 1
           maxLength: 100
           pattern: '.*\S.*'
-          example: user-123
+          description: Existing user id returned by `POST /api/v1/users`. Use this value to identify the voter; the same user id can vote only once.
+          example: 0191c8a2-66f9-7d49-940f-a96f6e0bd013
     VoteResponse:
       type: object
       required:
@@ -228,7 +230,8 @@ components:
           $ref: '#/components/schemas/VoteChoice'
         voterId:
           type: string
-          example: user-123
+          description: User id that submitted the vote.
+          example: 0191c8a2-66f9-7d49-940f-a96f6e0bd013
     VoteResultResponse:
       type: object
       required:

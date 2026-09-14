@@ -62,7 +62,7 @@ Request:
 ```json
 {
   "choice": "jajang",
-  "voterId": "user-123"
+  "voterId": "0191c8a2-66f9-7d49-940f-a96f6e0bd013"
 }
 ```
 
@@ -70,7 +70,8 @@ Validation:
 
 - `choice`: 필수, `jajang` 또는 `jjamppong`만 허용
 - `voterId`: 필수, blank 불가, 최대 100자
-- `voterId`는 이 서비스의 `userId`와 같은 값으로 취급
+- `voterId`는 `POST /api/v1/users`로 생성된 사용자의 `id`를 넣는다.
+- 같은 사용자 `id`는 한 번만 투표할 수 있다.
 
 Success Response:
 
@@ -82,7 +83,7 @@ Success Response:
   "data": {
     "id": "0191c8a2-66f9-7d49-940f-a96f6e0bd013",
     "choice": "jajang",
-    "voterId": "user-123"
+    "voterId": "0191c8a2-66f9-7d49-940f-a96f6e0bd013"
   },
   "error": null
 }
@@ -98,7 +99,7 @@ Error Responses:
 Notes:
 
 - `choice`는 대소문자를 구분하며 소문자 `jajang`, `jjamppong`만 허용한다.
-- 동일 `voterId`는 동일 `userId`로 간주하며 한 번만 투표할 수 있다.
+- `voterId`는 사용자의 `id`이며, 동일한 사용자 `id`는 한 번만 투표할 수 있다.
 
 ### 현재 투표 결과 조회: `GET /api/result`
 
