@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: live-test
+  profiles:
+    default: local
+  config:
+    import:
+      - classpath:config/server.yml
+      - classpath:config/http-client.yml
+      - classpath:config/resilience.yml
+      - classpath:config/management.yml
+      - classpath:config/jpa.yml

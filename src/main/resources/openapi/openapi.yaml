@@ -1,0 +1,250 @@
+openapi: 3.0.3
+info:
+  title: Live Test API
+  version: 0.0.1
+servers:
+  - url: http://localhost:8080
+paths:
+  /:
+    get:
+      tags:
+        - Root
+      operationId: getRoot
+      summary: Get root status
+      responses:
+        '200':
+          description: Root status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+  /health:
+    get:
+      tags:
+        - Root
+      operationId: getHealth
+      summary: Get service health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+  /api/v1/users:
+    post:
+      tags:
+        - User
+      operationId: createUser
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+        '409':
+          description: Duplicate email or nickname
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+  /api/vote:
+    post:
+      tags:
+        - Vote
+      operationId: createVote
+      summary: Create a vote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteRequest'
+      responses:
+        '201':
+          description: Created vote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+        '409':
+          description: Duplicate voter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+  /api/result:
+    get:
+      tags:
+        - Vote
+      operationId: getVoteResult
+      summary: Get vote result
+      responses:
+        '200':
+          description: Current vote result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+components:
+  schemas:
+    ApiEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - error
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          nullable: true
+          description: Successful response payload.
+        error:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ErrorResponse'
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - fieldErrors
+        - timestamp
+      properties:
+        code:
+          type: string
+          example: COMMON-001
+        message:
+          type: string
+          example: 잘못된 입력입니다.
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldErrorResponse'
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-07-27T05:02:11Z'
+    FieldErrorResponse:
+      type: object
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          example: message
+        message:
+          type: string
+          example: must not be blank
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - nickname
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: user@example.com
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: live-user
+    UserResponse:
+      type: object
+      required:
+        - id
+        - email
+        - nickname
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 0191c8a2-66f9-7d49-940f-a96f6e0bd013
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        nickname:
+          type: string
+          example: live-user
+    VoteChoice:
+      type: string
+      enum:
+        - jajang
+        - jjamppong
+      example: jajang
+    VoteRequest:
+      type: object
+      required:
+        - choice
+        - voterId
+      properties:
+        choice:
+          $ref: '#/components/schemas/VoteChoice'
+        voterId:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '.*\S.*'
+          example: user-123
+    VoteResponse:
+      type: object
+      required:
+        - id
+        - choice
+        - voterId
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 0191c8a2-66f9-7d49-940f-a96f6e0bd013
+        choice:
+          $ref: '#/components/schemas/VoteChoice'
+        voterId:
+          type: string
+          example: user-123
+    VoteResultResponse:
+      type: object
+      required:
+        - jajang
+        - jjamppong
+        - total
+      properties:
+        jajang:
+          type: integer
+          format: int64
+          example: 120
+        jjamppong:
+          type: integer
+          format: int64
+          example: 95
+        total:
+          type: integer
+          format: int64
+          example: 215

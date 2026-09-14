@@ -1,0 +1,6 @@
+spring:
+  http:
+    clients:
+      connect-timeout: 2s
+      read-timeout: 3s
+      redirects: dont-follow
