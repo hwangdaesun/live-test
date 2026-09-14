@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class VoteService {
 
   private final VoteRepository voteRepository;
+  private final VoteStatisticsService voteStatisticsService;
 
   @Transactional
   public Vote createVote(String voterId, VoteChoice choice) {
@@ -26,7 +27,9 @@ public class VoteService {
             });
 
     try {
-      return voteRepository.saveAndFlush(Vote.create(voterId, choice));
+      Vote vote = voteRepository.saveAndFlush(Vote.create(voterId, choice));
+      voteStatisticsService.incrementVoteCount(choice);
+      return vote;
     } catch (DataIntegrityViolationException exception) {
       throw new ConflictException(VoteErrorCode.DUPLICATE_VOTER);
     }

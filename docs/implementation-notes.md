@@ -89,11 +89,8 @@ POST /api/vote
   -> VoteRepository.findByVoterId(voterId) with PESSIMISTIC_WRITE
   -> VoteRepository.save(Vote)
   -> votes
-
-VoteStatisticsScheduler, every 10 minutes
-  -> VoteStatisticsService.refreshStatistics()
-  -> VoteRepository.countByChoice(...)
-  -> VoteStatisticRepository.save(...)
+  -> VoteStatisticsService.incrementVoteCount(...)
+  -> VoteStatisticRepository.incrementCount(...)
   -> vote_statistics
 
 GET /api/result
@@ -110,14 +107,14 @@ GET /api/result
 - `voterId`로 기존 `votes` row를 비관적 쓰기 락으로 조회한다.
 - 기존 row가 있으면 이미 투표한 사용자로 보고 `409 Conflict`를 반환한다.
 - 정상 요청이면 `votes`에 저장한다.
+- 투표 저장 성공 후 같은 transaction에서 해당 `choice`의 `vote_statistics.vote_count`를 1 증가시킨다.
 - 아직 row가 없는 `voterId`의 동시 insert 경쟁은 `voter_id` unique constraint 위반을 `409 Conflict`로 변환한다.
-- 투표 API transaction에서는 `vote_statistics`를 변경하지 않는다.
 
-통계 갱신 주요 분기:
+통계 즉시 갱신 주요 분기:
 
-- 10분마다 스케줄러가 `votes`의 `choice`별 count를 조회한다.
-- `vote_statistics`에 `jajang`, `jjamppong` row가 없으면 생성한다.
-- 각 통계 row의 `vote_count`를 현재 `votes` 집계값으로 덮어쓴다.
+- 투표 성공 시 `vote_statistics`에 해당 `choice` row가 없으면 `vote_count = 1`로 생성한다.
+- 해당 `choice` row가 있으면 `vote_count = vote_count + 1`로 원자 증가시킨다.
+- 중복 투표 또는 저장 실패 시 transaction rollback으로 통계 증가도 반영하지 않는다.
 
 결과 조회 집계 기준:
 
@@ -131,8 +128,8 @@ GET /api/result
 - 이미 존재하는 `voterId`는 `votes` row를 `PESSIMISTIC_WRITE`로 잠근 뒤 중복을 판단한다.
 - 아직 row가 없는 `voterId`는 잠글 대상이 없으므로 `votes.voter_id` unique key를 최종 방어선으로 둔다.
 - 같은 `voterId`로 동시 신규 요청이 들어오면 하나만 insert 성공하고 나머지는 conflict 오류로 처리한다.
-- 투표 저장과 `vote_statistics` 갱신은 같은 transaction으로 묶지 않는다.
-- 통계 갱신은 10분마다 별도 scheduler transaction에서 `votes` 기준으로 재계산한다.
+- 투표 저장과 `vote_statistics` 증가는 같은 transaction으로 묶는다.
+- `vote_statistics` 증가는 DB 원자 upsert로 처리해 동시 투표 시 카운트 손실을 방지한다.
 - 결과 조회는 read-only transaction으로 통계 row를 조회한다.
 - 재시작 후 데이터 유지는 MySQL 등 영속 저장소와 Docker volume 또는 외부 DB 연결로 보장한다.
 
@@ -145,8 +142,8 @@ API/integration:
 - 같은 `voterId`로 두 번 투표하면 두 번째 요청은 `409 Conflict`가 된다.
 - 같은 `voterId`로 이미 저장된 row가 있으면 비관적 락 조회 이후 `409 Conflict`가 된다.
 - 같은 `voterId` 신규 동시 요청은 하나만 성공하고 나머지는 unique constraint 기반 conflict가 된다.
-- 투표 성공 직후에는 통계 테이블이 즉시 증가하지 않는다.
-- 스케줄러 실행 후 통계 테이블이 `votes`의 `choice`별 count와 일치한다.
+- 투표 성공 직후 통계 테이블이 즉시 증가한다.
+- 중복 투표는 통계 테이블을 증가시키지 않는다.
 - `GET /api/result`가 통계 테이블 기준 `jajang`, `jjamppong`, `total`을 반환한다.
 - `GET /health`가 정상 상태에서 `200 OK`를 반환한다.
 

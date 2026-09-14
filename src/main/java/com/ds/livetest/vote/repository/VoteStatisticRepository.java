@@ -13,11 +13,11 @@ public interface VoteStatisticRepository extends JpaRepository<VoteStatistic, St
       value =
           """
           INSERT INTO vote_statistics (choice, vote_count, updated_at)
-          VALUES (:choice, :voteCount, CURRENT_TIMESTAMP(6))
+          VALUES (:choice, 1, CURRENT_TIMESTAMP(6))
           ON DUPLICATE KEY UPDATE
-            vote_count = :voteCount,
+            vote_count = vote_count + 1,
             updated_at = CURRENT_TIMESTAMP(6)
           """,
       nativeQuery = true)
-  void upsertCount(@Param("choice") String choice, @Param("voteCount") long voteCount);
+  void incrementCount(@Param("choice") String choice);
 }

@@ -1,7 +1,6 @@
 package com.ds.livetest.vote.repository;
 
 import com.ds.livetest.vote.domain.Vote;
-import com.ds.livetest.vote.domain.VoteChoice;
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,6 +11,4 @@ public interface VoteRepository extends JpaRepository<Vote, UUID> {
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   Optional<Vote> findByVoterId(String voterId);
-
-  long countByChoice(VoteChoice choice);
 }

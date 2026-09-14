@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.ds.livetest.IntegrationTestSupport;
-import com.ds.livetest.vote.service.VoteStatisticsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -17,8 +16,6 @@ import org.springframework.test.web.servlet.MockMvc;
 class VoteControllerTest extends IntegrationTestSupport {
 
   @Autowired private MockMvc mockMvc;
-
-  @Autowired private VoteStatisticsService voteStatisticsService;
 
   @Test
   void createVoteSavesAndReturnsVoteResponse() throws Exception {
@@ -54,28 +51,10 @@ class VoteControllerTest extends IntegrationTestSupport {
   }
 
   @Test
-  void getVoteResultDoesNotReflectVotesBeforeStatisticsRefresh() throws Exception {
+  void getVoteResultReflectsVotesImmediatelyAfterVoteCreation() throws Exception {
     createVote("jajang", "user-1");
     createVote("jajang", "user-2");
     createVote("jjamppong", "user-3");
-
-    mockMvc
-        .perform(get("/api/result"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.success").value(true))
-        .andExpect(jsonPath("$.data.jajang").value(0))
-        .andExpect(jsonPath("$.data.jjamppong").value(0))
-        .andExpect(jsonPath("$.data.total").value(0))
-        .andExpect(jsonPath("$.error").doesNotExist());
-  }
-
-  @Test
-  void getVoteResultReturnsStatisticsAfterRefresh() throws Exception {
-    createVote("jajang", "user-1");
-    createVote("jajang", "user-2");
-    createVote("jjamppong", "user-3");
-
-    voteStatisticsService.refreshStatistics();
 
     mockMvc
         .perform(get("/api/result"))
@@ -84,6 +63,33 @@ class VoteControllerTest extends IntegrationTestSupport {
         .andExpect(jsonPath("$.data.jajang").value(2))
         .andExpect(jsonPath("$.data.jjamppong").value(1))
         .andExpect(jsonPath("$.data.total").value(3))
+        .andExpect(jsonPath("$.error").doesNotExist());
+  }
+
+  @Test
+  void duplicateVoteDoesNotIncrementStatistics() throws Exception {
+    createVote("jajang", "user-123");
+
+    mockMvc
+        .perform(
+            post("/api/vote")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "choice": "jjamppong",
+                      "voterId": "user-123"
+                    }
+                    """))
+        .andExpect(status().isConflict());
+
+    mockMvc
+        .perform(get("/api/result"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.jajang").value(1))
+        .andExpect(jsonPath("$.data.jjamppong").value(0))
+        .andExpect(jsonPath("$.data.total").value(1))
         .andExpect(jsonPath("$.error").doesNotExist());
   }
 
