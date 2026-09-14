@@ -2,6 +2,7 @@ package com.ds.livetest.vote.service;
 
 import com.ds.livetest.vote.domain.VoteChoice;
 import com.ds.livetest.vote.domain.VoteStatistic;
+import com.ds.livetest.vote.repository.VoteRepository;
 import com.ds.livetest.vote.repository.VoteStatisticRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class VoteStatisticsService {
 
+  private final VoteRepository voteRepository;
   private final VoteStatisticRepository voteStatisticRepository;
 
   @Transactional(readOnly = true)
@@ -18,10 +20,21 @@ public class VoteStatisticsService {
     return new VoteResult(findVoteCount(VoteChoice.JAJANG), findVoteCount(VoteChoice.JJAMPPONG));
   }
 
+  @Transactional
+  public void refreshStatistics() {
+    refreshStatistics(VoteChoice.JAJANG);
+    refreshStatistics(VoteChoice.JJAMPPONG);
+  }
+
   private long findVoteCount(VoteChoice choice) {
     return voteStatisticRepository
         .findById(choice.value())
         .map(VoteStatistic::getVoteCount)
         .orElse(0L);
+  }
+
+  private void refreshStatistics(VoteChoice choice) {
+    long voteCount = voteRepository.countByChoice(choice);
+    voteStatisticRepository.upsertCount(choice.value(), voteCount);
   }
 }

@@ -5,7 +5,6 @@ import com.ds.livetest.vote.VoteErrorCode;
 import com.ds.livetest.vote.domain.Vote;
 import com.ds.livetest.vote.domain.VoteChoice;
 import com.ds.livetest.vote.repository.VoteRepository;
-import com.ds.livetest.vote.repository.VoteStatisticRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -16,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class VoteService {
 
   private final VoteRepository voteRepository;
-  private final VoteStatisticRepository voteStatisticRepository;
 
   @Transactional
   public Vote createVote(String voterId, VoteChoice choice) {
@@ -28,9 +26,7 @@ public class VoteService {
             });
 
     try {
-      Vote vote = voteRepository.saveAndFlush(Vote.create(voterId, choice));
-      voteStatisticRepository.increase(choice.value());
-      return vote;
+      return voteRepository.saveAndFlush(Vote.create(voterId, choice));
     } catch (DataIntegrityViolationException exception) {
       throw new ConflictException(VoteErrorCode.DUPLICATE_VOTER);
     }

@@ -142,7 +142,8 @@ Error Responses:
 
 Notes:
 
-- 결과는 `vote_statistics` 테이블의 `jajang`, `jjamppong` row를 기준으로 반환한다.
+- 결과는 스케줄러가 갱신한 `vote_statistics` 테이블의 `jajang`, `jjamppong` row를 기준으로 반환한다.
+- 투표 성공 직후 결과에 즉시 반영되지 않을 수 있으며, 다음 통계 갱신 이후 반영된다.
 - 없는 통계 row는 `0`으로 취급한다.
 - `total`은 `jajang + jjamppong`으로 계산한다.
 
